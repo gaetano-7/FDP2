@@ -1,0 +1,856 @@
+// NodoT.h: interface for the NodoT class.
+//
+//////////////////////////////////////////////////////////////////////
+
+#ifndef NODOT_H
+#define NODOT_H
+
+template <class T>
+class List;
+//DOPO:
+template <class T>
+class OrderedList;
+//DOPO:
+template <class T>
+class Iterator;
+
+template< class T >
+class Node
+{
+      friend class List<T>;
+	//DOPO:
+friend class OrderedList<T>;
+	//DOPO:
+friend class Iterator<T>;
+
+public:
+    Node(const T &v): nextNode(0),value(v) {}
+    T getValue() const {return value;}
+    Node<T>* getNextNode() const {return nextNode;}
+
+private:
+	Node<T>* nextNode;
+	T value;
+};
+
+#endif
+  
+ 
+//-------------------------------------------------
+// ListaT.h: interface for the ListaT class.
+//
+//////////////////////////////////////////////////////////////////////
+
+#ifndef LISTAT_H
+#define LISTAT_H
+
+#include "NodoT.h"
+#include <cassert>
+#include<iostream>
+using namespace std;
+
+template< class T >
+class List
+{
+//DOPO
+friend class Iterator<T>;
+
+public :
+	List() :first(0),last(0) {}
+	~List();
+	void pushFront(const T&);
+	void pushBack(const T&);
+	bool popFront(T& v);
+	bool popBack(T& v);
+	bool empty() const {return (first==0);}
+	void print() const;
+	bool find(const T&) const;
+    void delNode(Node<T>* &);
+    void remove(const T&v);
+    Node<T> * front();
+
+protected:  	//SERVE PER FAR ACCEDERE AD EVENTUALI CLASSI DERIVATE
+	Node<T> * first; //puntatore al primo nodo
+	Node<T> * last;  // puntatore all'ultimo nodo
+      Node<T> * newNode(const T&);
+     //Funzione di utilità che crea un nuovo nodo
+};
+
+
+template< class T >
+List<T>::~List()
+{
+	if(first == 0) return; //alternativamente invocare empty()
+	Node<T> *curr=first;
+	Node<T> * tmp;
+	while(curr != 0)
+	{
+		tmp = curr;
+		curr = curr->nextNode;
+		delete tmp;
+	}
+}
+
+
+
+
+template< class T >
+void List<T>::pushFront(const T& v)
+{
+    Node<T> *n = newNode(v);
+    if(empty()) //testa ==0;
+        first = last = n;
+
+    else
+    {
+        n->nextNode = first;
+        first = n;
+    }
+}
+
+template< class T >
+Node<T> *List<T>::newNode(const T &v)
+{
+    Node<T> *ptr = new Node<T>(v);
+    assert(ptr!=0);
+    return ptr;
+}
+
+template< class T >
+void List<T>::pushBack(const T& v)
+{
+    Node<T> *n = newNode(v);
+    if(empty()) //testa ==0;
+        first = last = n;
+
+    else
+    {
+    	last->nextNode = n;
+    	last = n;
+    }
+}
+
+template< class T >
+bool List<T>::popFront(T &v)
+{
+	if( empty())
+        return false;
+    Node<T>* tmp = first;
+	if (last == first)
+		first = last = 0;
+    else
+        first = first->nextNode;
+	v = tmp->value;
+	delete tmp;
+    return true;
+}
+
+
+
+
+
+
+
+
+template< class T >
+bool List<T>::popBack(T &v)
+{
+    if(empty()) //testa ==0;
+        return false;
+    Node<T>* tmp = last;
+
+	if(first == last)
+		first = last = 0;
+    else
+    {
+    Node<T> * curr = first;
+    while(curr->nextNode != last )
+        curr=curr->nextNode;
+    last = curr;
+    last->nextNode=0;
+    }
+	v = tmp->value;
+	delete tmp;
+    return true;
+}
+
+
+template< class T >
+void List<T>::print() const
+{
+   if( empty())
+   {
+       cout<<"empty";
+       return;
+   }
+   cout<<"Lista "<<endl;
+   Node<T> * ptr = first;
+   while(ptr!=0)
+   {
+       cout<<ptr->value<<endl;
+       ptr=ptr->nextNode;
+   }
+}
+
+template< class T>
+bool List<T>::find(const T& v) const
+{
+    Node<T> * ptr = first;
+    while(ptr!=0)
+    {
+        if(ptr->value == v)
+            return true;
+        ptr=ptr->nextNode;
+    }
+    return false;
+}
+
+
+
+
+
+
+template <class T>
+void List<T>::delNode(Node<T>* & pos) 
+//N.B. dopo la cancellazione pos punta al nodo successivo a quello cancellato
+{
+      assert(first!=0);
+	assert(pos!=0);
+	
+	if (pos==first) 
+	{
+		first=pos->nextNode;
+		delete pos;
+		pos=first;
+	}
+	else{
+
+		Node<T> * prec=first;
+		while(prec->nextNode!=pos) prec=prec->nextNode;
+		Node<T> *tmp = pos;
+		prec->nextNode = pos->nextNode;
+		if (pos==last) last = prec;
+		delete pos;
+		pos=prec;
+	}
+}
+
+template <class T>
+void List<T>::remove(const T&v)
+{
+    if(empty()) return;
+    bool found=false;
+	Node<int> * n;
+	
+	for (n=front(); n!=NULL && !found; n=n->getNextNode())
+		if (n->getValue()==v) 
+		{
+			found=true;
+			delNode(n); 
+		}
+	
+}
+
+template <class T>
+Node<T>* List<T>::front()
+{
+	return first;
+}
+#endif
+
+
+ 
+//--------------------------------------------
+#include <iostream>
+#include "ListaT.h"
+using namespace std;
+
+
+int main()
+{
+//Riempimento della lista
+    List<int> L;
+    for(int i =0; i <3; i++)
+    {
+        L.pushFront(i);
+        L.pushBack(-i);
+    }
+    L.print();
+
+//Eliminazione di un nodo specifico	(N.B. per semplicità la condizione è su un valore, ma potrebbe essere qualcosa di più complicato
+
+	for (Node<int> * n=L.front(); n!=NULL; n=n->getNextNode())
+	{ 
+		if (n->getValue()==2)
+		{	cout<<"Trovato il 2, lo rimuovo"<<endl;
+			L.delNode(n); //n potrebbe non essere più un riferimento valido
+		}
+		
+		
+	}
+	L.print();
+
+//Rimozione di un nodo con un certo contenuto
+	L.remove(1);
+	L.print();	
+
+//Funzone di ricerca di un nodo
+    if(L.find(-2))
+        cout<<"si"<<endl;
+    L.pushBack(-1);
+    L.print();
+
+//Esempio con liste di caratteri
+    List<char> C;
+    C.pushBack('a');
+    C.pushBack('b');
+    C.pushBack('B');
+    C.pushBack('A');
+    C.print();
+    char c;
+    if(C.popFront(c))
+        cout<<"dopo aver rimosso "<<c<<" alla lista " ;
+    C.print();
+
+    if(C.popBack(c))
+        cout<<"dopo aver rimosso "<<c<<" alla lista " ;
+    C.print();
+    return 0;
+} 
+APPLICAZIONI DELL’EREDITARIETA’: LISTE ORDINATE
+N.B. Occorre definire OrderedList come friend di Node
+N.B. La definizione protected per List serve a far accedere ai suoi elementi first e last alla classe derivata
+
+//---------------------
+//LISTE ORDINATE
+#ifndef LISTAOT_H
+#define LISTAOT_H
+
+#include "ListaT.h"
+#include <cassert>
+#include<iostream>
+using namespace std;
+template <class T>
+class OrderedList:protected List<T>
+{
+	public:
+	void insert(const T&);
+	void remove(const T&v) {List<T>::remove(v);}
+	bool find(const T& v) const {return List<T>::find(v);}
+	void print() {List<T>::print();}
+	bool empty() const {return List<T>::empty();}
+};
+
+template <class T>
+void OrderedList<T>::insert (const T& v) // INSERIMENTO ORDINATO
+{
+    Node<T> *n = List<T>::newNode(v);
+    if(List<T>::empty()) //testa ==0;
+        List<T>::first = List<T>::last = n;
+    else
+    {
+        	Node<T> * prec=NULL;
+		Node<T> * corr=List<T>::first;
+		while(corr!=NULL && corr->getValue()<v)
+		{
+			prec=corr;
+			corr=corr->nextNode;
+		}
+		if (prec==NULL) // equivalente a push front
+		{
+			n->nextNode = List<T>::first;
+			List<T>::first = n;
+		}
+		else if (corr==NULL)  // equivalente a push back
+		{
+			List<T>::last->nextNode = n;
+			List<T>::last = n;
+		}
+		else
+		{
+			prec->nextNode=n;
+			n->nextNode=corr;
+		}	
+    }
+}
+#endif
+
+//--------------------------------------------
+#include <iostream>
+#include "ListaOT.h"
+using namespace std;
+
+int main()
+{
+	OrderedList<int> L;
+	for (int i=5; i>0; i--) L.insert(i);
+	L.print();		//OUTPUT: 1 2 3 4 5 
+	L.remove(3);
+	L.print();		//OUTPUT: 1 2 4 5 
+	if (L.find(4)) L.remove(4);	//OUTPUT: 1 2 5
+	L.print();
+    return 0;
+}
+
+ 
+ITERATORI SU LISTE
+In questa sezione introduciamo il concetto di Iteratore sulle liste, che consente di manipolare le liste in modo più semplice. 
+Per poter introdurre gli iteratori, sia la classe Node, sia la classe List devono dichiarare la classe Iterator come friend, per concederle l’accesso ai propri elementi privati. 
+
+#ifndef ITERATOR2_H_INCLUDED
+#define ITERATOR2_H_INCLUDED
+
+#include "ListaT.h"
+#include <iostream>
+using namespace std;
+#include <cassert>
+
+template< class T >
+class Iterator{
+public:
+	Iterator(List<T> &);
+	T getCurrentValue() const;
+	void setCurrentValue(const T&);
+	T operator()();		//Equivalente a getCurrentValue 
+
+	T operator*();		//Equivalente a getCurrentValue
+    bool isNull();
+    bool operator!(); //	Opposto di isNull();
+    void operator++(); //	Equivalente a  moveNext();
+
+    void operator--(); // 	Equivalente a moveBack();
+
+	void moveAtFirst();
+	void moveAtLast();
+	//inserisce al posto dell'elemento corrente (tra prec e corr)
+	void insert(const T& val);
+	//remuove il nodo nella posizione corrente
+	void remove();
+
+    Node<T>* begin(){return l.first;}
+
+bool operator== (const Iterator &);
+bool operator!= (const Iterator &);
+
+private:
+	Node<T> * corr;
+	Node<T> * prec;
+	List<T>& l;
+};
+
+template< class T >
+Iterator<T>::Iterator(List<T> & lista):l(lista),corr(lista.first),prec(0)
+{}
+
+template< class T >
+T Iterator<T>::getCurrentValue() const
+{
+	assert(corr != NULL);
+	return corr->value;
+}
+
+template< class T >
+T Iterator<T>::operator()()
+{
+    	assert(corr != NULL);
+return corr->value;
+}
+
+template< class T >
+T Iterator<T>::operator*()
+{
+    	assert(corr != NULL);
+	return corr->value;
+}
+
+template< class T >
+void Iterator<T>::setCurrentValue(const T& val)
+{
+	assert(corr != NULL);
+	corr->value = val;
+}
+
+
+template< class T >
+bool Iterator<T>::isNull()
+{
+	return (corr == NULL);
+}
+template< class T >
+bool Iterator<T>::operator!()
+{
+    return (corr != NULL); //restituisce vero se corr esiste;
+}
+
+
+template< class T >
+void Iterator<T>::moveAtFirst()
+{
+	corr = l.first;
+	prec = NULL;
+}
+
+template< class T >
+void Iterator<T>::moveAtLast()
+{
+	corr = l.first;
+	prec = NULL;
+	while (corr != l.last)
+	{
+		prec = corr;
+		corr = corr->nextNode;
+	}
+}
+
+
+
+
+
+template< class T >
+void Iterator<T>::operator++()
+{
+	assert(corr != NULL);
+	prec = corr;
+	corr = corr->nextNode;
+}
+
+template< class T >
+void Iterator<T>::operator--()
+{
+assert(corr != NULL);
+	if (corr == l.first)
+	{	corr = NULL;
+		prec = NULL;
+	}
+	else
+	{
+
+		Node<T> * tmp = corr;
+		corr = l.first;
+		prec = NULL;
+		while (corr->nextNode != tmp)
+		{
+			prec = corr;
+			corr = corr->nextNode;
+        }
+	}
+}
+
+template< class T >
+void Iterator<T>::insert(const T& val)
+{
+	if (corr == l.first)
+	{
+		l.pushFront(val);
+		corr = l.first;
+		prec = NULL;
+	}
+	else if (prec == l.last)
+	{
+		l.pushBack(val);
+		corr = l.last;
+		//prec rimane su quello a cui puntava last prima della  modifica
+	}
+	else
+	{
+		Node<T> * N= l.newNode(val);
+		N->nextNode = corr;
+		prec->nextNode= N;
+		corr = N;
+	}
+}
+
+
+
+
+
+template< class T >
+void Iterator<T>::remove()
+{
+	assert(corr != NULL);
+	if (corr == l.first)
+	{
+	    T v;
+		l.popFront(v);
+		corr = l.first;
+		prec = NULL;
+	}
+	else if (corr == l.last)
+	{
+        	T v;
+		l.popBack(v);
+		prec = l.last;
+		corr = NULL;
+	}
+	else
+	{
+		prec->nextNode=corr->nextNode;
+		delete corr;
+		corr = prec->nextNode;
+	}
+}
+
+
+template< class T >
+bool Iterator<T>::operator==(const Iterator &i)
+{
+	return ((&l == &i.l) && (prec == i.prec) && (corr == i.corr));
+}
+
+template< class T >
+bool Iterator<T>::operator!=(const Iterator &i){
+	return ((&l != & i.l) || (prec != i.prec) || (corr != i.corr));
+}
+
+
+#endif // ITERATOR2_H_INCLUDED
+
+ 
+Esempi d’uso di liste con classi generiche (es. rubrica) ed iteratori su liste
+#include <iostream>
+#include "ListaT.h"
+#include "Iterator.h"
+
+using namespace std;
+#include "cstring"
+
+//PER LA PRIMA PARTE DELL’ESERCIZIO (es. rubrica telefonica)
+class Contatto
+{
+friend ostream& operator<< (ostream&, const Contatto&);
+
+public:
+    Contatto();
+    Contatto(const string& nom, const string& cog);
+    Contatto(const Contatto & c);
+
+    void setNome(const string& nom);
+    void setCognome(const string& cog);
+    void setTel(const string& tel);
+    void setEmail(const string& email);
+
+    string getNome() const;
+    string getCognome() const;
+    string getEmail() const;
+    string getTel() const;
+    bool operator==(const Contatto&);
+private:
+    string nome, cognome, telefono, email;
+};
+
+Contatto::Contatto() :
+        nome(""), cognome(""), telefono(""), email("") {}
+
+Contatto::Contatto(const string & nom, const string & cog)  :
+        nome(nom), cognome(cog), telefono(""), email("") {}
+
+Contatto::Contatto(const Contatto & c) :
+        nome(c.nome), cognome(c.cognome), telefono(c.telefono), email(c.email) {}
+
+void Contatto::setNome(const string & nom){nome = nom;}
+void Contatto::setCognome(const string & cog){cognome = cog;}
+void Contatto::setTel(const string & tel){telefono = tel;}
+void Contatto::setEmail(const string & email){this->email = email;}
+
+string Contatto::getNome() const{return nome;}
+string Contatto::getCognome() const{return cognome;}
+string Contatto::getEmail() const{return email;}
+string Contatto::getTel() const{return telefono;}
+
+bool Contatto::operator==(const Contatto& c)
+{
+    return nome==c.nome &&
+           cognome == c.cognome &&
+           telefono== c.telefono &&
+           email == c.email;
+}
+
+ostream& operator<< (ostream& o, const Contatto & c)
+{
+        o << c.getNome() << " - ";
+        o << c.getCognome() << " - ";
+        o << c.getEmail() << " - ";
+        o << c.getTel() << endl;
+        return o;
+}
+
+//FUZIONE DI UTILITA’ PER L’ESEMPIO
+bool cerca(List<Contatto> &L, const string & s)
+{
+   Node<Contatto> * p = L.front();
+   while (p!=0)
+   {
+       if(p->getValue().getCognome() == s)
+
+                      return true;
+
+
+       p=p->getNextNode();
+
+
+   }
+   return false;
+
+}
+
+/*
+FUNZIONE CHE RICEVUTA UNA LISTA ED UN INTERO x SCORRE LA LISTA 
+PER COPPIE DI ELEMENTI CONSECUTIVI ED ELIMINA IL SECONDO NODO
+SE LA SOMMA TRA IL PRIMO NODO ED IL SECONDO FA x
+*/
+void eliminaSomma(List<int>& L,int x)
+{
+    Iterator<int> it(L),it2(L);
+    ++it2;
+
+    while(!it2)
+    {
+        cout<<*it<<" e "<<*it2<<endl;
+       if((*it)+(*it2)==x)
+       {
+           cout<<"rimuovo "<<*it2<<endl;
+           it2.remove();
+        }
+        else
+        {
+            ++it2;
+            ++it;
+        }
+    }
+
+}
+
+
+
+int main()
+{
+//------
+    List<int> L;
+    for(int i =0; i <3; i++)
+    {
+        L.pushFront(i);
+        L.pushBack(-i);
+    }
+    L.print();		// 2 1 0 0 -1 -2
+    if(L.find(-5))	// Non lo trova
+        cout<<"si"<<endl;
+    L.pushBack(-1);	
+    L.print();		// 2 1 0 0 -1 -2 -1
+
+    List<char> C;
+    C.pushBack('a');
+    C.pushBack('a');
+    C.pushBack('B');
+    C.pushBack('a');
+    C.print();		// a a B a
+
+    char c;
+    if(C.popFront(c))
+        cout<<"dopo aver rimosso "<<c<<" la lista diventa"<<endl; ;
+    C.print();		// a B a
+
+    if(C.popBack(c))
+        cout<<"dopo aver rimosso "<<c<<" la lista diventa"<<endl;;
+    C.print();		// a B
+//------
+
+    List<Contatto> rubrica;
+    Contatto amico;
+    amico.setNome("mario");
+    amico.setCognome("rossi");
+    rubrica.pushFront(amico);
+    amico.setNome("luisa");
+    amico.setCognome("verdi");
+    rubrica.pushFront(amico);
+
+    if(rubrica.find(amico))
+        cout<<"trovato "<<amico<<endl; 	// Trovato luisa – verdi - -
+    if(cerca(rubrica,"rossi"))
+        cout<<"rossi trovato"<<endl;	// rossi trovato
+
+
+ 
+//-----------------------------------------------------
+//Iteratori //
+
+   List<char> N;
+    Iterator<char> sin(N),des(N);
+    sin.insert('a');
+    sin.insert('v');
+    sin.insert('a');
+    N.print();		// a v a
+
+    des.moveAtLast();
+    cout<<"valore corrente di des: "<<des.getCurrentValue()<<endl;
+    des.insert('i');
+    N.print();		// a v i a
+    cout<<"valore corrente di des: "<<des.getCurrentValue()<<endl; 
+//des si trova sulla i
+    des.remove();
+    N.print();		// a v a
+    cout<<"valore corrente di des: "<<des.getCurrentValue()<<endl; 
+//des si trova sulla a finale
+    --des;
+    cout<<"valore corrente di des: "<<des.getCurrentValue()<<endl; 
+//des si trova sulla v
+    ++des;
+    cout<<"valore corrente di des: "<<des()<<endl; 
+//des si trova sulla a finale
+
+	cout<<"verifico siano palindrome "<<endl; //N.B. la lista e’: a v a
+	bool palindroma=true;
+	sin.moveAtFirst();
+	des.moveAtLast();
+	cout<<"Situazione iniziale: "<<endl;
+    	cout<<sin()<<" " <<des()<<endl; 
+//sin si trova sulla prima a e des si trova sulla a finale
+
+	while ((sin!=des)&&(palindroma))
+	{
+		cout<<sin()<<" "<<des()<<endl;
+		if (sin.getCurrentValue()!=des.getCurrentValue())
+			palindroma=false;
+		else
+		{ ++sin;
+		  if (sin!=des) --des;
+		}
+	}
+	if (palindroma)  cout<<"palindroma"<<endl;
+	else cout<<"Non palindroma" <<endl;
+
+
+
+     List<int> T;
+     T.pushBack(1);
+     T.pushBack(2);
+     T.pushBack(3);
+     T.pushBack(3);
+     T.pushBack(1);
+
+     Iterator<int> it(T);
+     for( ;!it.isNull(); ++it)
+        cout<<*it<<endl;	// 1 2 3 3 1
+
+     it.moveAtFirst();
+     eliminaSomma(T,5);  // Elimina sia il primo che il secondo 3
+
+     for(it.moveAtFirst(); !it.isNull(); ++it)
+        cout<<*it<<endl;	// 1 2 1 
+
+     eliminaSomma(T,3);		// Elimina il 2
+
+     for(it.moveAtFirst(); !it.isNull(); ++it)
+        cout<<*it<<endl;	// 1 1
+
+    eliminaSomma(T,2);		// Elimina il secondo 1
+
+     for(it.moveAtFirst(); !it.isNull(); ++it)
+        cout<<*it<<endl;	// 1
+    
+	eliminaSomma(T,1);	// non fa nulla
+
+     for(it.moveAtFirst(); !it.isNull(); ++it)
+        cout<<*it<<endl;	// 1
+
+    return 0;
+}
